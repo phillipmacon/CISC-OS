@@ -1,0 +1,1181 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.12.29
+Created On: 5/2/2013 7:30:16 PM
+
+00000000                             1  
+00000000                             2  *-----------------------------------------------------------
+00000000                             3  * Program    : ECE 441 FINAL PROJECT
+00000000                             4  * Written by : SUBASH LUITEL
+00000000                             5  * Date       : 04/30/2013
+00000000                             6  * Description: MONITOR PROGRAM TO PROVIDE SIMILAR FUNCTIONALITY
+00000000                             7  *              AS MOTOROLA'S TUTOR PROGRAM 
+00000000                             8  *-----------------------------------------------------------
+00000000                             9  
+00001050                            10      ORG $1050
+00001050  =00000000                 11  ZERO    EQU $00
+00001050  =00000024                 12  DOLLAR  EQU $24
+00001050  =0000000B                 13  NUMCMD  EQU $0B
+00001050  =00003000                 14  STACK   EQU $3000
+00001050  =0000000D                 15  CR      EQU $0D
+00001050  =0000000A                 16  LF      EQU $0A
+00001050  =00000020                 17  SP      EQU $20
+00001050                            18  INBUF   DS.B    80
+000010A0= 20 00                     19  EINBF   DC.B    ' ',0   
+000010A2                            20  OUTBF   DS.B    24
+000010BA= 20 00                     21  EOTBF   DC.B    ' ',0
+000010BC= 20 00                     22  SPACE   DC.B    ' ',0   
+000010BE= 20 3F 20 00               23  QUNMRK  DC.B    ' ? ',0
+000010C2= 00                        24  NLINE   DC.B    '',0
+000010C3= 45 43 45 5F 34 34 ...     25  INTRO1  DC.B    'ECE_441 FINAL PROJECT,',CR,LF
+000010DB= 53 55 42 41 53 48 ...     26          DC.B    'SUBASH LUITEL, APRIL 30 2013',CR,LF,CR,LF,0
+000010FC                            27  *-----------------------------------------------------------
+000010FC                            28  *HELP MENU 
+000010FC                            29  *-----------------------------------------------------------    
+000010FC= 41 76 61 69 6C 61 ...     30  HLPMNU  DC.B    'Available commands:                                                     ',CR,0
+00001146= 20 48 45 4C 50 3A ...     31  DHELP   DC.B    ' HELP:  Displays a list of available commands                           ',CR,0
+00001190= 20 4D 44 53 50 3A ...     32  DMDSP   DC.B    ' MDSP:  MDSP <address1> <address2> eg: MDSP $910 $1000<CR>              ',CR,0
+000011DA= 20 20 20 20 20 20 ...     33          DC.B    '        Outputs the address and memory contents at address              ',CR,0
+00001224= 20 4D 43 48 47 3A ...     34  DMCHG   DC.B    ' MCHG:  MCHG <address>[;size] eg: MCHG $1000;W<CR>                      ',CR,0
+0000126E= 20 20 20 20 20 20 ...     35          DC.B    '        Displays memory and modify data at specified address            ',CR,0
+000012B8= 20 53 52 54 57 3A ...     36  DSRTW   DC.B    ' SRTW:  SRTW <address1> <address2> eg: SRTW $904 $90E<CR>               ',CR,0
+00001302= 20 20 20 20 20 20 ...     37          DC.B    '        Sorts the data in a block of memory                             ',CR,0
+0000134C= 20 42 4B 46 4C 3A ...     38  DBKFL   DC.B    ' BKFL:  BLKF <address1> <address2> <word> eg: BLKF $800 $830 CC<CR>     ',CR,0
+00001396= 20 20 20 20 20 20 ...     39          DC.B    '        Fills memory from address1 to address2 with data                ',CR,0
+000013E0= 20 42 4B 53 48 3A ...     40  DBKSH   DC.B    ' BKSH:  BKSC <address1> <address2> "string" eg: BKSC $900 $910 "MA"<CR> ',CR,0
+0000142A= 20 20 20 20 20 20 ...     41          DC.B    '        Used to search for a string from memory                         ',CR,0
+00001474= 20 42 4B 4D 56 3A ...     42  DBKMV   DC.B    ' BKMV:  BKMV <address1> <address2> <address3> eg:BKMV $908 $90B $909    ',CR,0
+000014BE= 20 20 20 20 20 20 ...     43          DC.B    '        Move (duplicate) blocks of memory                               ',CR,0
+00001508= 20 44 52 45 47 3A ...     44  DDREG   DC.B    ' DREG:  DREG<CR> -> Displays the values for all the registers           ',CR,0     
+00001552= 20 48 58 44 43 3A ...     45  DHXDC   DC.B    ' HXDC:  HXDC <hex number> eg: HXDC $0030<CR> (NUMBER MUST BE 4 DIGIT)   ',CR,0
+0000159C= 20 20 20 20 20 20 ...     46  DDCHX   DC.B    '        Convert from hexadecimal number to decimal number               ',CR,0     
+000015E6= 20 45 58 49 54 3A ...     47  DEXIT   DC.B    ' EXIT:  EXIT <CR> -> Exit the program gracefully                        ',CR,0
+00001630= 20 47 4F 54 4F 3A ...     48  DGOTO   DC.B    ' GOTO:  GOTO <address> eg: GO $900<CR> -> Run a program at given address',CR,0
+0000167A= 20 20 20 20 20 20 ...     49          DC.B    '        Run a program at given address                                  ',CR,0         
+000016C4= 20 00                     50  EHMNU   DC.B    ' ',0
+000016C6                            51  *-----------------------------------------------------------
+000016C6                            52  
+000016C6                            53  *EXCEPTION MESSAGES
+000016C6                            54  *-----------------------------------------------------------
+000016C6= 41 44 44 52 45 53 ...     55  ADEMSG  DC.B    'ADDRESSS ERROR!           ',CR,0
+000016E2= 42 55 53 20 45 52 ...     56  BSEMSG  DC.B    'BUS ERROR!                ',CR,0
+000016FE= 49 4C 4C 49 47 41 ...     57  ILAMSG  DC.B    'ILLIGAL ADDRESSS ERROR!   ',CR,0
+0000171A= 44 49 56 49 44 45 ...     58  DVZMSG  DC.B    'DIVIDE BY ZERO EXCEPTION! ',CR,0
+00001736= 50 52 49 56 49 4C ...     59  PRVMSG  DC.B    'PRIVILAGE VIOLATION ERROR!',CR,0
+00001752= 4C 49 4E 45 20 41 ...     60  LNAMSG  DC.B    'LINE A EMULATOR ERROR!    ',CR,0
+0000176E= 4C 49 4E 45 20 46 ...     61  LNFMSG  DC.B    'LINE F EMULATOR ERROR!    ',CR,0
+0000178A= 52 55 4E 4E 49 4E ...     62  UPROG   DC.B    'RUNNING USER PROGRAM YO...',CR,0
+000017A6                            63  *-----------------------------------------------------------
+000017A6= 44 30 20 3D 20 30 ...     64  DR0 DC.B    'D0 = 0000',0
+000017B0= 44 31 20 3D 20 30 ...     65  DR1 DC.B    'D1 = 0000',0
+000017BA= 44 32 20 3D 20 30 ...     66  DR2 DC.B    'D2 = 0000',0
+000017C4= 44 33 20 3D 20 30 ...     67  DR3 DC.B    'D3 = 0000',0
+000017CE= 44 34 20 3D 20 30 ...     68  DR4 DC.B    'D4 = 0000',0
+000017D8= 44 35 20 3D 20 30 ...     69  DR5 DC.B    'D5 = 0000',0
+000017E2= 44 36 20 3D 20 30 ...     70  DR6 DC.B    'D6 = 0000',0
+000017EC= 44 37 20 3D 20 30 ...     71  DR7 DC.B    'D7 = 0000',0
+000017F6= 41 30 20 3D 20 30 ...     72  AR0 DC.B    'A0 = 0000',0
+00001800= 41 31 20 3D 20 30 ...     73  AR1 DC.B    'A1 = 0000',0
+0000180A= 41 32 20 3D 20 30 ...     74  AR2 DC.B    'A2 = 0000',0
+00001814= 41 33 20 3D 20 30 ...     75  AR3 DC.B    'A3 = 0000',0
+0000181E= 41 34 20 3D 20 30 ...     76  AR4 DC.B    'A4 = 0000',0
+00001828= 41 35 20 3D 20 30 ...     77  AR5 DC.B    'A5 = 0000',0
+00001832= 41 36 20 3D 20 30 ...     78  AR6 DC.B    'A6 = 0000',0
+0000183C= 55 53 20 3D 20 30 ...     79  US  DC.B    'US = 0000',0
+00001846= 53 53 20 3D 20 30 ...     80  SSP DC.B    'SS = 0000',0
+00001850= 50 43 20 3D 20 30 ...     81  PCR DC.B    'PC = 0000',0
+0000185A                            82  *EXTRA LABELS
+0000185A                            83  *-----------------------------------------------------------                                                                            
+0000185A= 4D 4F 4E 49 54 4F ...     84  PROMPT  DC.B    'MONITOR441 > ',0
+00001868= 57 48 41 54 21 00         85  INVCOM  DC.B    'WHAT!',0
+0000186E= 41 44 44 52 45 53 ...     86  ADRERR  DC.B    'ADDRESS ERROR: INVALID ADDRESING MODE',0
+00001894                            87  
+00001894                            88  *-----------------------------------------------------------
+00001894= 48 45 4C 50 20 00         89  COM_TABL    DC.B    'HELP ',0
+0000189A= 4D 44 53 50 20 00         90          DC.B    'MDSP ',0
+000018A0= 4D 43 48 47 20 00         91          DC.B    'MCHG ',0
+000018A6= 53 52 54 57 20 00         92          DC.B    'SRTW ',0
+000018AC= 42 4B 4D 56 20 00         93          DC.B    'BKMV ',0
+000018B2= 42 4B 46 4C 20 00         94          DC.B    'BKFL ',0
+000018B8= 42 4B 53 48 20 00         95          DC.B    'BKSH ',0
+000018BE= 42 4B 53 54 20 00         96          DC.B    'BKST ',0
+000018C4= 48 58 44 43 20 00         97          DC.B    'HXDC ',0
+000018CA                            98  *       DC.B    'DCHX ',0
+000018CA= 45 58 49 54 20 00         99          DC.B    'EXIT ',0
+000018D0= 44 52 45 47 20 00        100          DC.B    'DREG ',0
+000018D6= 47 4F 54 4F 00           101          DC.B    'GOTO',0
+000018DB                           102  *-----------------------------------------------------------
+000018DC= 1FCA                     103  COM_ADD DC.W     HELP 
+000018DE= 1FD6                     104          DC.W     MDSP 
+000018E0= 2014                     105          DC.W     MCHG
+000018E2= 203E                     106          DC.W     SRTW 
+000018E4= 207A                     107          DC.W     BKMV 
+000018E6= 20C8                     108          DC.W     BKFL 
+000018E8= 2118                     109          DC.W     BKSH 
+000018EA= 215C                     110          DC.W     BKST 
+000018EC= 218C                     111          DC.W     HXDC
+000018EE                           112  *        DC.W     DCHX 
+000018EE= 2204                     113          DC.W     EXIT
+000018F0= 2208                     114          DC.W     DREG 
+000018F2= 221C                     115          DC.W     GOTO  
+000018F4                           116  *-----------------------------------------------------------        
+000018F4  43F8 16C6                117  ADR_ERR LEA ADEMSG,A1
+000018F8  4EB9 000019E6            118      JSR OTPTCR
+000018FE  4EB9 00001A96            119      JSR     DSREGS
+00001904  2A2F 000A                120      MOVE.L  10(A7),D5
+00001908  48E7 FBFF                121      MOVEM.L D0-D4/D6-D7/A0-A7,-(SP)
+0000190C  4EB9 00001A48            122      JSR CLROBF  
+00001912  4EB9 00001A2A            123      JSR CLRBUF
+00001918  43F8 10A2                124      LEA OUTBF,A1
+0000191C  3205                     125      MOVE.W  D5,D1
+0000191E  4EB9 00001D7A            126      JSR HX2ASC
+00001924  2282                     127      MOVE.L  D2,(A1)
+00001926  4EB9 000019E6            128      JSR OTPTCR
+0000192C                           129  
+0000192C  4CDF FFDF                130      MOVEM.L (SP)+,D0-D4/D6-D7/A0-A7
+00001930  6000 F6D8                131      BRA MAIN
+00001934                           132  BUS_ERR 
+00001934  43F8 16E2                133      LEA BSEMSG,A1
+00001938  4EB9 000019E6            134      JSR OTPTCR
+0000193E  4EB9 00001A96            135      JSR     DSREGS
+00001944  6000 F6C4                136      BRA MAIN
+00001948                           137  ILL_INS 
+00001948  43F8 16FE                138      LEA ILAMSG,A1
+0000194C  4EB9 000019E6            139      JSR OTPTCR
+00001952  4EB9 00001A96            140      JSR     DSREGS
+00001958  6000 F6B0                141      BRA MAIN
+0000195C                           142  DIV_ZRO 
+0000195C  43F8 171A                143      LEA DVZMSG,A1
+00001960  4EB9 000019E6            144      JSR OTPTCR
+00001966  4EB9 00001A96            145      JSR     DSREGS
+0000196C  6000 F69C                146      BRA MAIN
+00001970                           147  PRV_VIO
+00001970  43F8 1736                148      LEA PRVMSG,A1
+00001974  4EB9 000019E6            149      JSR OTPTCR
+0000197A  4EB9 00001A96            150      JSR     DSREGS
+00001980  6000 F688                151      BRA MAIN
+00001984                           152  LINE_A
+00001984  43F8 1752                153      LEA LNAMSG,A1
+00001988  4EB9 000019E6            154      JSR OTPTCR
+0000198E  4EB9 00001A96            155      JSR     DSREGS
+00001994  6000 F674                156      BRA MAIN
+00001998                           157  LINE_F
+00001998  43F8 176E                158      LEA LNFMSG,A1
+0000199C  4EB9 000019E6            159      JSR OTPTCR
+000019A2  4EB9 00001A96            160      JSR     DSREGS
+000019A8  6000 F660                161      BRA MAIN
+000019AC                           162  
+000019AC                           163  * INITIALIZE EXCEPTION VECTORS
+000019AC                           164  *-----------------------------------------------------------
+000019AC                           165      
+000019AC                           166  IEXVC   
+000019AC  21FC 00001934 0008       167      MOVE.L  #BUS_ERR,$8
+000019B4  21FC 000018F4 000C       168      MOVE.L  #ADR_ERR,$C
+000019BC  21FC 00001948 0010       169      MOVE.L  #ILL_INS,$10
+000019C4  21FC 0000195C 0014       170      MOVE.L  #DIV_ZRO,$14
+000019CC  21FC 00001970 0020       171      MOVE.L  #PRV_VIO,$20
+000019D4  21FC 00001984 0028       172      MOVE.L  #LINE_A,$28
+000019DC  21FC 00001998 002C       173      MOVE.L  #LINE_F,$2C
+000019E4  4E75                     174      RTS
+000019E6                           175  
+000019E6                           176  *-----------------------------------------------------------
+000019E6                           177  * DISPLAY SUBROUTINES
+000019E6                           178  *-----------------------------------------------------------
+000019E6                           179  * OUTPUT WITH A CARRIAGE RETURN
+000019E6                           180  *-----------------------------------------------------------                                                                            
+000019E6  48E7 C000                181  OTPTCR  MOVEM.L D0-D1,-(SP)
+000019EA  B27C 0000                182      CMP #0,D1
+000019EE  6E00 0006                183      BGT CRNMSET
+000019F2  323C 000A                184      MOVE.W  #10,D1      ;SETUP D1 TO CONTAIN MAXIMUM NUMBER OF CHARACTERS
+000019F6  303C 000D                185  CRNMSET MOVE    #13,D0  
+000019FA  4E4F                     186      TRAP    #15
+000019FC  4EB9 00001A2A            187      JSR CLRBUF
+00001A02  4CDF 0003                188      MOVEM.L (SP)+,D0-D1
+00001A06  4E75                     189      RTS
+00001A08                           190      
+00001A08                           191  * OUTPUT WITHOUT A CARRIAGE RETURN
+00001A08                           192  *-----------------------------------------------------------                                                                            
+00001A08  48E7 C000                193  OTPTNC  MOVEM.L D0-D1,-(SP)
+00001A0C  B27C 0000                194      CMP #0,D1
+00001A10  6E00 0006                195      BGT NCNMSET
+00001A14  323C 0064                196      MOVE.W  #100,D1     ;SETUP D1 TO CONTAIN MAXIMUM NUMBER OF CHARACTERS
+00001A18  303C 000E                197  NCNMSET MOVE    #14,D0  
+00001A1C  4E4F                     198      TRAP    #15
+00001A1E  4EB9 00001A2A            199      JSR CLRBUF
+00001A24  4CDF 0003                200      MOVEM.L (SP)+,D0-D1
+00001A28  4E75                     201      RTS
+00001A2A                           202      
+00001A2A                           203  * CLEAR BUFFER
+00001A2A                           204  *-----------------------------------------------------------                                                                            
+00001A2A  48E7 0030                205  CLRBUF  MOVEM.L A2/A3,-(SP)
+00001A2E  45F8 1050                206      LEA INBUF,A2
+00001A32  47F8 10A0                207      LEA EINBF,A3
+00001A36  B6CA                     208  CLRNXT  CMPA    A2,A3
+00001A38  6D00 0008                209      BLT CLRDNE
+00001A3C  34FC 0000                210      MOVE.W  #$00,(A2)+
+00001A40  60F4                     211      BRA CLRNXT
+00001A42  4CDF 0C00                212  CLRDNE  MOVEM.L (SP)+,A2/A3
+00001A46  4E75                     213      RTS
+00001A48                           214      
+00001A48                           215  * CLEAR BUFFER
+00001A48                           216  *-----------------------------------------------------------                                                                            
+00001A48  48E7 0030                217  CLROBF  MOVEM.L A2/A3,-(SP)
+00001A4C  45F8 10A2                218      LEA OUTBF,A2
+00001A50  47F8 10BA                219      LEA EOTBF,A3
+00001A54  B6CA                     220  CLRNXT2 CMPA    A2,A3
+00001A56  6F00 0008                221      BLE CLRDNE2
+00001A5A  34FC 0000                222      MOVE.W  #$00,(A2)+
+00001A5E  60F4                     223      BRA CLRNXT2
+00001A60  4CDF 0C00                224  CLRDNE2 MOVEM.L (SP)+,A2/A3
+00001A64  4E75                     225      RTS
+00001A66                           226      
+00001A66                           227  * EXIT SUBROUTINE
+00001A66                           228  *------------------------------------------------------------
+00001A66  303C 0009                229  MEXIT   MOVE    #9,D0
+00001A6A  4E4F                     230      TRAP    #15
+00001A6C                           231      
+00001A6C                           232  *INPUT SUBROUTINE
+00001A6C                           233  *-----------------------------------------------------------                                                                            
+00001A6C  48E7 FF00                234  INPUT   MOVEM.L D0-D7,-(SP)
+00001A70  43F8 1050                235      LEA INBUF,A1
+00001A74  303C 0002                236      MOVE    #2,D0
+00001A78  4E4F                     237      TRAP    #15
+00001A7A  4CDF 00FF                238      MOVEM.L (SP)+,D0-D7
+00001A7E  4E75                     239      RTS
+00001A80                           240      
+00001A80                           241  *SUBROUTINE TO DISPLAY PROMPT
+00001A80                           242  *-----------------------------------------------------------                                                                            
+00001A80                           243  DPRMPT  
+00001A80  4EB8 1A2A                244        JSR   CLRBUF
+00001A84  43F8 185A                245      LEA PROMPT,A1
+00001A88  4EB8 1A08                246      JSR OTPTNC
+00001A8C  43F8 1050                247      LEA INBUF,A1
+00001A90  4EB8 1A6C                248      JSR INPUT
+00001A94  4E75                     249      RTS
+00001A96                           250      
+00001A96                           251  *SUBROUTINE TO DISPLAY ALL REGISTERS
+00001A96                           252  *-----------------------------------------------------------
+00001A96  48E6 FFFD                253  DSREGS  MOVEM.L D0-D7/A0-A5/A7,-(A6)
+00001A9A  43F8 17A6                254      LEA DR0,A1
+00001A9E  4EB9 0000223C            255      JSR SHWREG
+00001AA4  43F8 17B0                256      LEA DR1,A1
+00001AA8  4EB9 0000223C            257      JSR SHWREG
+00001AAE  43F8 17BA                258      LEA DR2,A1
+00001AB2  4EB9 0000223C            259      JSR SHWREG
+00001AB8  43F8 17C4                260      LEA DR3,A1
+00001ABC  4EB9 0000223C            261      JSR SHWREG
+00001AC2  4EB9 00001BB4            262      JSR DNLINE
+00001AC8  43F8 17CE                263      LEA DR4,A1
+00001ACC  4EB9 0000223C            264      JSR SHWREG
+00001AD2  43F8 17D8                265      LEA DR5,A1
+00001AD6  4EB9 0000223C            266      JSR SHWREG
+00001ADC  43F8 17E2                267      LEA DR6,A1
+00001AE0  4EB9 0000223C            268      JSR SHWREG
+00001AE6  43F8 17EC                269      LEA DR7,A1
+00001AEA  4EB9 0000223C            270      JSR SHWREG
+00001AF0  4EB9 00001BB4            271      JSR DNLINE
+00001AF6  43F8 17F6                272      LEA AR0,A1
+00001AFA  4EB9 0000223C            273      JSR SHWREG
+00001B00  43F8 1800                274      LEA AR1,A1
+00001B04  4EB9 0000223C            275      JSR SHWREG
+00001B0A  43F8 180A                276      LEA AR2,A1
+00001B0E  4EB9 0000223C            277      JSR SHWREG
+00001B14  43F8 1814                278      LEA AR3,A1
+00001B18  4EB9 0000223C            279      JSR SHWREG
+00001B1E  4EB9 00001BB4            280      JSR DNLINE
+00001B24  43F8 181E                281      LEA AR4,A1
+00001B28  4EB9 0000223C            282      JSR SHWREG
+00001B2E  43F8 1828                283      LEA AR5,A1
+00001B32  4EB9 0000223C            284      JSR SHWREG  
+00001B38  43F8 183C                285      LEA US,A1
+00001B3C  4EB8 1A08                286      JSR OTPTNC
+00001B40  2216                     287      MOVE.L  (A6),D1
+00001B42  4EB9 00001D7A            288      JSR HX2ASC
+00001B48  4EB9 00001BCA            289      JSR DVALUE
+00001B4E  4EB9 00001B7A            290      JSR DSPACE
+00001B54  43F8 1846                291      LEA SSP,A1
+00001B58  4EB8 1A08                292      JSR OTPTNC
+00001B5C  221E                     293      MOVE.L  (A6)+,D1
+00001B5E  4EB9 00001D7A            294      JSR HX2ASC
+00001B64  4EB9 00001BCA            295      JSR DVALUE
+00001B6A  4EB9 00001B7A            296      JSR DSPACE
+00001B70  4EB9 00001BB4            297      JSR DNLINE
+00001B76                           298  *MOVEM.L    (A6)+,D0-D7/A0-A5/A7
+00001B76  6000 F492                299      BRA MAIN
+00001B7A                           300  
+00001B7A                           301  *SUBROUTINE TO DISPLAY A SPACE
+00001B7A                           302  *-----------------------------------------------------------                                                                            
+00001B7A  48E7 0040                303  DSPACE  MOVEM.L A1,-(SP)
+00001B7E  43F8 10BC                304      LEA SPACE,A1
+00001B82  4EB8 1A08                305      JSR OTPTNC
+00001B86  4CDF 0200                306      MOVEM.L (SP)+,A1
+00001B8A  4E75                     307      RTS
+00001B8C                           308      
+00001B8C                           309  *SUBROUTINE TO DISPLAY LINE FEED
+00001B8C                           310  *-----------------------------------------------------------                                                                            
+00001B8C  48E7 0040                311  DLINEF  MOVEM.L A1,-(SP)
+00001B90  43F8 000A                312      LEA LF,A1
+00001B94  4EB8 19E6                313      JSR OTPTCR
+00001B98  4CDF 0200                314      MOVEM.L (SP)+,A1
+00001B9C  4EB8 1A2A                315      JSR     CLRBUF
+00001BA0  4E75                     316      RTS
+00001BA2                           317      
+00001BA2                           318  *SUBROUTINE TO DISPLAY A QUESTION MARKS
+00001BA2                           319  *-----------------------------------------------------------                                                                            
+00001BA2  48E7 0040                320  DQNMRK  MOVEM.L A1,-(SP)
+00001BA6  43F8 10BE                321      LEA QUNMRK,A1
+00001BAA  4EB8 1A08                322      JSR OTPTNC
+00001BAE  4CDF 0200                323      MOVEM.L (SP)+,A1
+00001BB2  4E75                     324      RTS
+00001BB4                           325      
+00001BB4                           326  *SUBROUTINE TO DISPLAY A NEWLINE
+00001BB4                           327  *-----------------------------------------------------------
+00001BB4                           328  
+00001BB4  48E7 0040                329  DNLINE  MOVEM.L A1,-(SP)
+00001BB8  43F8 10C2                330      LEA NLINE,A1
+00001BBC  4EB8 19E6                331      JSR OTPTCR
+00001BC0  4EB8 1A2A                332      JSR CLRBUF
+00001BC4  4CDF 0200                333      MOVEM.L (SP)+,A1
+00001BC8  4E75                     334      RTS
+00001BCA                           335      
+00001BCA                           336  *SUBROUTINE TO DISPLAY A VALUE
+00001BCA                           337  *-----------------------------------------------------------
+00001BCA                           338  
+00001BCA  48E7 0040                339  DVALUE  MOVEM.L A1,-(SP)
+00001BCE  43F8 10A2                340      LEA OUTBF,A1
+00001BD2  4EB8 1A48                341      JSR CLROBF
+00001BD6  2282                     342      MOVE.L  D2,(A1)
+00001BD8  4EB8 1A08                343      JSR OTPTNC
+00001BDC  4CDF 0200                344      MOVEM.L (SP)+,A1
+00001BE0  4E75                     345      RTS
+00001BE2                           346      
+00001BE2                           347  *SUBROUTINE TO DISPLAY HELP MENU
+00001BE2                           348  *-----------------------------------------------------------
+00001BE2  48E7 0040                349  MHELP   MOVEM.L A1,-(SP)    ;SAVE A1
+00001BE6  47F8 16C4                350          LEA EHMNU,A3        ;LOAD END HELP MENU TO A3
+00001BEA  43F8 10FC                351          LEA HLPMNU,A1       ; L0AD THE HELP MENU TO A1
+00001BEE  B6C9                     352  LPMHP   CMPA    A1,A3       ;CHECK IF REACHED THE END OF HELP MENU OR NOT
+00001BF0  6F00 000C                353          BLE HMDNE           ;IF REACHED THE END DONE
+00001BF4  4EB8 19E6                354          JSR OTPTCR
+00001BF8  D2FC 004A                355          ADDA #$4A,A1
+00001BFC  60F0                     356          BRA LPMHP
+00001BFE  4CDF 0200                357  HMDNE   MOVEM.L (SP)+,A1
+00001C02  4E75                     358          RTS
+00001C04                           359      
+00001C04                           360  *-----------------------------------------------------------
+00001C04  48E7 0040                361  UFAIL   MOVEM.L A1,-(SP)
+00001C08  43F8 1868                362          LEA INVCOM,A1
+00001C0C  4EB8 19E6                363          JSR OTPTCR
+00001C10  4CDF 0200                364          MOVEM.L (SP)+,A1
+00001C14  6000 F3F4                365          BRA MAIN
+00001C18                           366      
+00001C18                           367  *-----------------------------------------------------------
+00001C18  48E7 0040                368  UFAIL2  MOVEM.L A1,-(SP)
+00001C1C  4EB8 19E6                369      JSR OTPTCR
+00001C20  4CDF 0200                370      MOVEM.L (SP)+,A1
+00001C24  6000 F3E4                371      BRA MAIN
+00001C28                           372      
+00001C28                           373  *convert a value stored in register D1 from binary to BCD
+00001C28                           374  * result is stored in D4
+00001C28                           375  *-----------------------------------------------------------
+00001C28  48E7 6000                376  BINTBCD MOVEM.L D1-D2,-(SP)
+00001C2C  343C 0007                377      MOVE.W  #7,D2
+00001C30  4284                     378      CLR.L   D4
+00001C32  82FC 000A                379  NXTDIG  DIVU    #10,D1
+00001C36  4841                     380      SWAP    D1
+00001C38  8801                     381      OR.B    D1,D4
+00001C3A  E89C                     382      ROR.L   #4,D4
+00001C3C  4201                     383      CLR.B   D1
+00001C3E  4841                     384      SWAP    D1
+00001C40  51CA FFF0                385      DBRA    D2,NXTDIG
+00001C44  4CDF 0006                386      MOVEM.L (SP)+,D1-D2
+00001C48  4E75                     387      RTS
+00001C4A                           388  
+00001C4A                           389  * convert a value store in register D0 from BCD to binary
+00001C4A                           390  * DATAIS READ FROM DATA REGISTER D0, RESULT STORED IN D0D0
+00001C4A                           391  *-----------------------------------------------------------                                                                            
+00001C4A  48E7 4000                392  BCDTBIN MOVEM.L D1,-(SP)
+00001C4E  E85C                     393      ROR.W   #4,D4
+00001C50  1204                     394      MOVE.B  D4,D1
+00001C52  C2FC 000A                395      MULU    #10,D1
+00001C56  C83C 0000                396      AND.B   #0,D4
+00001C5A  E05C                     397      ROR.W   #8,D4
+00001C5C  E81C                     398      ROR.B   #4,D4
+00001C5E  D841                     399      ADD.W   D1,D4
+00001C60  4CDF 0002                400      MOVEM.L (SP)+,D1
+00001C64  4E75                     401      RTS
+00001C66                           402      
+00001C66                           403  * DATA IS READ FROM DATA REGISTER D2, RESULT STORED IN D6
+00001C66                           404  *-----------------------------------------------------------                                                                            
+00001C66  48E7 2C00                405  ASTBIN  MOVEM.L D2/D4-D5,-(SP)  ;SAVE REGISTERS
+00001C6A  4284                     406      CLR.L   D4
+00001C6C  4285                     407      CLR.L   D5
+00001C6E  4286                     408      CLR.L   D6
+00001C70  383C 0004                409      MOVE    #4,D4           ;SETUP COUNTER
+00001C74  B43C 0039                410  LOOP2   CMP.B   #$39,D2     ;GREATER THAN $39
+00001C78  6E00 0012                411      BGT CMFRT               ;MORE,COMPARE WITH $41
+00001C7C  B43C 0031                412      CMP.B   #$31,D2         ;COMPARE WITH $31
+00001C80  6D00 0028                413      BLT FAIL2               ;LESS, BRANCH TO FAIL
+00001C84  0402 0030                414      SUBI.B  #$30,D2         ;CONVERT TO HEX
+00001C88  6000 0016                415      BRA NXT2                ;SAVE BYTE TO D2
+00001C8C  B43C 0041                416  CMFRT   CMP.B   #$41,D2     ;COMPARE WITH $41
+00001C90  6D00 0018                417      BLT FAIL2               ;LESS, BRANCH TO FAIL
+00001C94  B43C 0046                418      CMP.B   #$46,D2         ;COMPARE WITH $45
+00001C98  6E00 0010                419      BGT FAIL2               ;MORE, BRANCH TO FAIL
+00001C9C  0402 0037                420      SUBI.B  #$37,D2         ;CONVERT TO HEX
+00001CA0  E09A                     421  NXT2    ROR.L   #8,D2       ;SAVE BYTE TO D2
+00001CA2  5344                     422      SUBI    #1,D4
+00001CA4  6ECE                     423      BGT LOOP2
+00001CA6  6000 0008                424      BRA ASCDNE
+00001CAA  143C 0000                425  FAIL2   MOVE.B  #$00,D2
+00001CAE  60F0                     426      BRA NXT2
+00001CB0  7A04                     427  ASCDNE  MOVE.L  #4,D5
+00001CB2  8C02                     428  FIXI    OR.B    D2,D6
+00001CB4  E85E                     429      ROR.W   #4,D6
+00001CB6  E09A                     430      ROR.L   #8,D2
+00001CB8  5305                     431      SUBI.B  #1,D5
+00001CBA  6EF6                     432      BGT FIXI
+00001CBC  4CDF 0034                433  ASDONE  MOVEM.L (SP)+,D2/D4-D5  ;RESTORE REGISTERS
+00001CC0  4E75                     434      RTS 
+00001CC2                           435  
+00001CC2                           436  * DECIMAL TO ASCII
+00001CC2                           437  * DECIMAL VALUE IN D4, RESULT IN D5
+00001CC2                           438  *----------------------------------------------------------- 
+00001CC2  48E7 2000                439  DECASC  MOVEM.L D2,-(SP)
+00001CC6  7404                     440          MOVE.L  #4,D2
+00001CC8  1A04                     441  REPET   MOVE.B  D4,D5
+00001CCA  0205 000F                442          ANDI.B  #$0F,D5
+00001CCE  0605 0030                443          ADDI.B  #$30,D5
+00001CD2  E09D                     444          ROR.L   #8,D5
+00001CD4  E85C                     445          ROR.W   #4,D4
+00001CD6  5302                     446          SUBI.B  #1,D2
+00001CD8  6EEE                     447          BGT REPET
+00001CDA  4CDF 0004                448          MOVEM.L (SP)+,D2
+00001CDE  4E75                     449          RTS
+00001CE0                           450  
+00001CE0                           451  * HEX TO DECIMAL
+00001CE0                           452  * HEX VALUE READ FROM INPUT IBUFFER, RESULT IN D5
+00001CE0                           453  *-----------------------------------------------------------
+00001CE0  4EB8 1C66                454  HX2DEC  JSR ASTBIN      ; ASCII READ FROM D2 PLACED IN D6
+00001CE4  2206                     455          MOVE.L  D6,D1   ; BIN VALUE MOVED FROM D6 TO D1
+00001CE6  4EB8 1C28                456          JSR BINTBCD     ; BIN VALUE IN D1, BCD IN D4 
+00001CEA  4EB8 1CC2                457          JSR DECASC      ; BCD VALUE IN D4, ASCII IN D5
+00001CEE  4E75                     458          RTS
+00001CF0                           459          
+00001CF0                           460          
+00001CF0                           461  * HEX TO DECIMAL
+00001CF0                           462  * HEX VALUE READ FROM INPUT IBUFFER, RESULT IN D5
+00001CF0                           463  *-----------------------------------------------------------
+00001CF0  4EB8 1C66                464  DEC2HX  JSR ASTBIN      ; ASCII READ FROM D2 PLACED IN D6
+00001CF4  2206                     465          MOVE.L  D6,D1   ; BIN VALUE MOVED FROM D6 TO D1
+00001CF6  4EB8 1C28                466          JSR BINTBCD     ; BIN VALUE IN D1, BCD IN D4 
+00001CFA  4EB8 1CC2                467          JSR DECASC      ; BCD VALUE IN D4, ASCII IN D5
+00001CFE  4E75                     468          RTS
+00001D00                           469  
+00001D00                           470      
+00001D00                           471  * MEMORY BLOCK DISPLAY
+00001D00                           472  * START ADDRESS IN A3, END ADDRESS IN A4
+00001D00                           473  *-----------------------------------------------------------                                                                            
+00001D00  43F8 1050                474  MMDSP   LEA INBUF,A1    ;INITIALIZE BUFFER ADDRESS
+00001D04  48E7 5000                475      MOVEM.L D1/D3,-(SP) ;SAVE REGISTERS
+00001D08  4281                     476      CLR.L   D1      ;CLEAR D1
+00001D0A  4283                     477      CLR.L   D3      ;CLEAR D3
+00001D0C  363C 0010                478  LPDMA   MOVE    #$10,D3     ;SET UP COUNTER FOR TEN BYTES
+00001D10  4EB9 00001D46            479      JSR MMADSP      ;DISPLAY MEMORY ADDRESS
+00001D16  121B                     480  LPDSP   MOVE.B  (A3)+,D1
+00001D18  4EB9 00001D7A            481      JSR HX2ASC      ;CONVERT FROM HEX TO ASCII
+00001D1E  3282                     482      MOVE.W  D2,(A1)     ;MOVE WORD INTO BUFFER
+00001D20  4EB8 1A08                483      JSR OTPTNC      ; OUTPUT THE CONTENTS OF A1
+00001D24  4EB8 1B7A                484      JSR     DSPACE      ; DISPLAY SPACE
+00001D28  B8CB                     485      CMPA    A3,A4       ; A4-A3
+00001D2A  6F00 0010                486      BLE MDEXT       ; IF END OF BLOCK REACHED RETURN FROM SUBROUTINE    
+00001D2E  5343                     487      SUBI    #1,D3       ;DECREMENT COUNTE
+00001D30  6F00 0004                488      BLE DNULIN      ;DISPLAY NEW LINE
+00001D34  60E0                     489      BRA LPDSP       ;LOOP BACK
+00001D36  4EB8 1BB4                490  DNULIN  JSR DNLINE      ;DISPLAY NEW LINE
+00001D3A  60D0                     491      BRA LPDMA       ;LOOP BACK 
+00001D3C  4EB8 1BB4                492  MDEXT   JSR DNLINE      ;DISPLAY NEW LINE
+00001D40  4CDF 000A                493      MOVEM.L (SP)+,D1/D3 ;RESTORE REGISTERS
+00001D44  4E75                     494      RTS         ;RETURN FROM SUBROUTINE
+00001D46                           495      
+00001D46                           496  * MEMORY ADDRESS DISPLAY
+00001D46                           497  * MEMORY ADDRESS AT A3
+00001D46                           498  *-----------------------------------------------------------                                                                            
+00001D46  48E7 6070                499  MMADSP  MOVEM.L D1-D2/A1-A3,-(SP)
+00001D4A  4EB8 1A2A                500      JSR CLRBUF
+00001D4E  43F8 1050                501      LEA INBUF,A1
+00001D52  32BC 3030                502      MOVE.W  #$3030,(A1)
+00001D56  5449                     503      ADDA    #2,A1
+00001D58  320B                     504      MOVE    A3,D1
+00001D5A  4EB9 00001D7A            505      JSR HX2ASC
+00001D60  2282                     506      MOVE.L  D2,(A1)
+00001D62  5849                     507      ADDA    #4,A1
+00001D64  32BC 3A20                508      MOVE.W  #$3A20,(A1) ; #$3A20 => :_
+00001D68  43F8 1050                509      LEA INBUF,A1
+00001D6C  4EB8 1A08                510      JSR OTPTNC  
+00001D70  4EB8 1A2A                511      JSR CLRBUF
+00001D74  4CDF 0E06                512  CLRDE   MOVEM.L (SP)+,D1-D2/A1-A3
+00001D78  4E75                     513      RTS
+00001D7A                           514  
+00001D7A                           515  * HEXADECIMAL TO ASCII
+00001D7A                           516  * VALUE TO BE CONVERTED IS STORED IN D1 RESULT IS IN D2
+00001D7A                           517  *-----------------------------------------------------------                                                                             
+00001D7A  48E7 1000                518  HX2ASC  MOVEM.L D3,-(SP)
+00001D7E  4282                     519      CLR.L   D2
+00001D80  7603                     520      MOVE.L  #3,D3
+00001D82  1401                     521  H2ALUP  MOVE.B  D1,D2
+00001D84  0202 000F                522      ANDI.B  #$0F,D2
+00001D88  0C02 0009                523      CMPI.B  #9,D2
+00001D8C  6F00 000A                524      BLE H2ALE9
+00001D90  0602 0037                525      ADD.B   #$37,D2
+00001D94  6000 0006                526      BRA H2ANXT
+00001D98  0602 0030                527  H2ALE9  ADD.B   #$30,D2
+00001D9C  E09A                     528  H2ANXT  ROR.L   #8,D2
+00001D9E  E859                     529      ROR.W   #4,D1
+00001DA0  5343                     530      SUBI    #1,D3
+00001DA2  6CDE                     531      BGE H2ALUP
+00001DA4  4CDF 0008                532      MOVEM.L (SP)+,D3
+00001DA8  4E75                     533      RTS 
+00001DAA                           534      
+00001DAA                           535  * BLOCK FILL 
+00001DAA                           536  * TAKES TWO ADDRESSES AND A WORD AND FILLS ALL MEMORY IN RANGE
+00001DAA                           537  * WITH THAT WORD
+00001DAA                           538  * USING ADDRESS REGISTERS: START ADRESS AT A2, END ADDRESS AT
+00001DAA                           539  * A5, DATA IN REGISTER D4
+00001DAA                           540  *-----------------------------------------------------------                                                                            
+00001DAA  48E7 0040                541  BLKFIL  MOVEM.L A1,-(SP)
+00001DAE  43F8 1050                542      LEA INBUF,A1
+00001DB2  1604                     543      MOVE.B  D4,D3       ;TAKES BYTE ENTERED AND COPIES IT
+00001DB4  E15C                     544      ROL.W   #8,D4       ;SO THAT IT FILLS UP A WORD
+00001DB6  1803                     545      MOVE.B  D3,D4       ;IN D4
+00001DB8  3204                     546      MOVE.W  D4,D1
+00001DBA  4EB8 1D7A                547      JSR     HX2ASC
+00001DBE  3A3C 0008                548  BFDMA   MOVE    #$08,D5  
+00001DC2  4EB8 1D46                549      JSR MMADSP
+00001DC6  36C4                     550  BKFLP   MOVE.W  D4,(A3)+
+00001DC8  2282                     551      MOVE.L  D2,(A1)
+00001DCA  4EB8 1A08                552      JSR OTPTNC  
+00001DCE  4EB8 1B7A                553      JSR DSPACE
+00001DD2  BACB                     554      CMPA    A3,A5
+00001DD4  6F00 0010                555      BLE BFEXT
+00001DD8  5345                     556      SUBI    #1,D5
+00001DDA  6F00 0004                557      BLE BFNLIN
+00001DDE  60E6                     558      BRA BKFLP
+00001DE0  4EB8 1BB4                559  BFNLIN  JSR DNLINE
+00001DE4  60D8                     560      BRA BFDMA
+00001DE6  4EB8 1BB4                561  BFEXT   JSR DNLINE
+00001DEA  4CDF 0200                562      MOVEM.L (SP)+,A1
+00001DEE  4E75                     563      RTS
+00001DF0                           564  
+00001DF0                           565  * MEM MODIFY
+00001DF0                           566  * START ADDRESS IN A4, END ADDRESS IN A5
+00001DF0                           567  *-----------------------------------------------------------
+00001DF0  48E7 6200                568  MEMMOD  MOVEM.L D1/D2/D6,-(SP)
+00001DF4  43F8 1050                569      LEA INBUF,A1
+00001DF8  4EB8 1A2A                570      JSR CLRBUF
+00001DFC                           571      *MOVEA.L    A4,A3
+00001DFC  4EB8 1D46                572  NXTVAL  JSR MMADSP      ;DISPLAY CURRENT ADDRESS
+00001E00  2213                     573      MOVE.L  (A3),D1     ;MOVE CONTENTS OF ADDRESS TO D1 FOR DISPLAY
+00001E02  4EB8 1D7A                574      JSR HX2ASC      ;DISPLAY CONTENTS OF ADDRESS
+00001E06  2282                     575      MOVE.L  D2,(A1)
+00001E08  4EB8 1A08                576      JSR OTPTNC      ;OUTPUT THE CONTENTS OF A1
+00001E0C  4EB8 1BA2                577      JSR DQNMRK      ;OUTPUT QUESTION MARK
+00001E10  4EB8 1A6C                578      JSR INPUT       ;TAKE INPUT FROM USER
+00001E14  0C11 002E                579      CMPI.B  #$2E,(A1)
+00001E18  6700 0038                580      BEQ MMDONE
+00001E1C  0C11 0030                581      CMPI.B  #$30,(A1)
+00001E20  6D00 FDE2                582      BLT UFAIL       ;ERROR MESSAGE SUBROUTINE
+00001E24  0C11 0041                583      CMPI.B  #$41,(A1)
+00001E28  6D00 000E                584      BLT CHKNXT
+00001E2C  0C11 0046                585      CMPI.B  #$46,(A1)
+00001E30  6E00 FDD2                586      BGT UFAIL       ;ERROR MESSAGE SUBROUTINE
+00001E34  6000 000A                587      BRA CONTNU
+00001E38  0C11 0039                588  CHKNXT  CMPI.B  #$39,(A1)
+00001E3C  6E00 FDC6                589      BGT UFAIL   
+00001E40  2411                     590  CONTNU  MOVE.L  (A1),D2
+00001E42  4EB8 1C66                591      JSR ASTBIN
+00001E46  3686                     592      MOVE.W  D6,(A3)
+00001E48  4286                     593      CLR.L   D6
+00001E4A  544B                     594      ADDA    #2,A3
+00001E4C  60AE                     595      BRA NXTVAL
+00001E4E  43F8 1050                596      LEA     INBUF,A1
+00001E52  4CDF 0046                597  MMDONE  MOVEM.L (SP)+,D1/D2/D6
+00001E56  4E75                     598      RTS
+00001E58                           599  * SORTW
+00001E58                           600  * START ADDRESS IN A3, END ADDRESS IN A2
+00001E58                           601  * USES BUBBLE SORT
+00001E58                           602  * A4 WILL CONTAIN A COPY OF THE START ADDRESS
+00001E58                           603  *-----------------------------------------------------------
+00001E58  48E7 3810                604  SORTW   MOVEM.L D2-D4/A3,-(SP)
+00001E5C  284B                     605      MOVEA.L A3,A4       
+00001E5E  4282                     606  RESRT   CLR.L   D2
+00001E60  264C                     607      MOVEA.L A4,A3   
+00001E62  161B                     608  NEXTN   MOVE.B  (A3)+,D3
+00001E64  1813                     609      MOVE.B  (A3),D4
+00001E66  B843                     610      CMP.W   D3,D4
+00001E68  6E00 0010                611      BGT CHKEND
+00001E6C  B843                     612      CMP.W   D3,D4
+00001E6E  6700 000A                613      BEQ CHKEND
+00001E72  5242                     614      ADDI    #1,D2
+00001E74  534B                     615      SUBA    #1,A3
+00001E76  16C4                     616      MOVE.B  D4,(A3)+
+00001E78  1683                     617      MOVE.B  D3,(A3)
+00001E7A  B6CD                     618  CHKEND  CMPA    A5,A3
+00001E7C  6C00 0004                619      BGE CHKSWP  
+00001E80  60E0                     620      BRA NEXTN
+00001E82  0C42 0000                621  CHKSWP  CMPI    #0,D2
+00001E86  6ED6                     622      BGT RESRT
+00001E88  4CDF 081C                623      MOVEM.L (SP)+,D2-D4/A3
+00001E8C  4E75                     624      RTS
+00001E8E                           625      
+00001E8E                           626  * BLKSCH
+00001E8E                           627  **-----------------------------------------------------------
+00001E8E  48E7 3880                628  BLKSCH  MOVEM.L D2-D4/A0,-(SP)
+00001E92  4282                     629      CLR.L   D2
+00001E94  4283                     630      CLR.L   D3
+00001E96  5248                     631      ADDA    #1,A0
+00001E98  3448                     632      MOVEA   A0,A2   
+00001E9A                           633  *   MOVEA   #$700,A3      ;A3 IS THE ADDRESS WE ARE GOING TO START OUR SEARCH FROM
+00001E9A                           634  *   MOVEA   #$6000,A4     ;PLACE OUR STOP ADDRESS IN A4 
+00001E9A  0C1A 0022                635  GETSRG  CMPI.B  #$22,(A2)+    ;CHECK IS WE HAVE REACHED THE END OF THE STRING THAT WAS INPUT
+00001E9E  6700 0006                636      BEQ SEARCH        ;IF WE HAVE REACHED THE END OF THE STRING, WE GO TO SEARCH
+00001EA2  5202                     637      ADDI.B  #1,D2         ;INCREMENT THE CHARACTER COUNTER
+00001EA4  60F4                     638      BRA GETSRG        ;GET THE NEXT VALID CHRACTER ENTERED
+00001EA6  3448                     639  SEARCH  MOVEA   A0,A2         ;RESET A2 TO ITS INITIAL POINT. WE ARE STARTING OVER
+00001EA8  2802                     640      MOVE.L  D2,D4         ;COPY THE COUNTER VALUE FOR RESET
+00001EAA  B8CB                     641  GETNXT  CMPA    A3,A4         ;CHECK IF WE'VE REACHED THE END OF SEARCHABLE MEMORY
+00001EAC  6F00 0024                642      BLE SCHDNE        ;IF WE HAVE REACHED THE END THEN, RETURN FORM SUBROUTINE
+00001EB0  161B                     643      MOVE.B  (A3)+,D3      ;MOVE THE BYTE WE WISH TO MATCH INTO D3
+00001EB2  B612                     644      CMP.B   (A2),D3       ;CHECK IF IT MATCHES WITH ONE OF THE CHARACTERS ENTERED
+00001EB4  66F0                     645      BNE SEARCH        ;IF NOT RESET THE COUNTER
+00001EB6  5304                     646      SUBI.B  #1,D4         ;IF IT DOES, DECREMENT THE COUNTER
+00001EB8  6F00 0006                647      BLE DONESR        ;IF COUNTER IS ZERO, WE ARE DONE
+00001EBC  524A                     648      ADDA    #1,A2         ;OTHERWISE, INCREMENT A2 TO THE NEXT BYTE 
+00001EBE  60EA                     649      BRA GETNXT        ;GET THE NEXT CHARACTER TO MATCH
+00001EC0  16BC 0000                650  DONESR  MOVE.B  #$00,(A3)     ;WE TERMINATE THE STRING FOUND WITH   
+00001EC4  97C2                     651      SUBA.L  D2,A3         ;SET A3 TO POINT TO THE START OF THE STRING THE WE MATCHED
+00001EC6  344B                     652      MOVEA   A3,A2         ;COPY A3 TO A2 AS PER THE MMADSP REQUIREMENTS
+00001EC8  4EB8 1D46                653      JSR MMADSP        ;CALL MMADSP TO DSIPLAY THE ADDRESS AT A2/A3
+00001ECC  324A                     654      MOVEA   A2,A1         ;COPY THE LOCATION OF THE ADDRESS OF STRING FOUND TO A1
+00001ECE  4EB8 19E6                655      JSR OTPTCR        ;DISPLAY THE CONTENTS OF THAT ADDRESS I.E DISPLAY THE STRING FOUND
+00001ED2  4CDF 011C                656  SCHDNE  MOVEM.L (SP)+,D2-D4/A0    ;RESTORE THE RESGISTER CONTENTS
+00001ED6  4E75                     657      RTS
+00001ED8                           658  
+00001ED8                           659  * BLKMOV
+00001ED8                           660  * START ADDRESS IS A2, END ADDRESS IS A3
+00001ED8                           661  * NEW BLOCK ADDRESS IS IN A4
+00001ED8                           662  *-----------------------------------------------------------
+00001ED8  48E7 0030                663  BLKMOV  MOVEM.L A2-A3,-(SP)
+00001EDC  B6CA                     664  MVBYT   CMPA    A2,A3
+00001EDE  6F00 0006                665      BLE MVDONE
+00001EE2  18DA                     666      MOVE.B  (A2)+,(A4)+
+00001EE4  60F6                     667      BRA MVBYT
+00001EE6  4CDF 0C00                668  MVDONE  MOVEM.L (SP)+,A2-A3
+00001EEA  4E75                     669      RTS
+00001EEC                           670  * BLKSET
+00001EEC                           671  * START ADDRESS IS A2, END ADDRESS IS A3
+00001EEC                           672  * NEW BLOCK ADDRESS IS IN A4
+00001EEC                           673  * TODO: CHANGE THIS SO THAT IT DOES NOT RELY ON READING FROM 
+00001EEC                           674  * THE INPUT BUFER WHICH MIGHT GIVE ERRORNEOUS OUTPUT
+00001EEC                           675  *-----------------------------------------------------------
+00001EEC  3448                     676  BLKSET  MOVEA   A0,A2
+00001EEE  3678 10A0                677      MOVEA   EINBF,A3
+00001EF2  4EB8 1ED8                678      JSR BLKMOV
+00001EF6  4E75                     679      RTS
+00001EF8                           680      
+00001EF8                           681  * INTERPRETER
+00001EF8                           682  *-----------------------------------------------------------    
+00001EF8  7220                     683  INTPRT  MOVE.L  #$20,D1
+00001EFA  4282                     684      CLR.L   D2
+00001EFC  7641                     685      MOVE.L  #$41,D3
+00001EFE  785A                     686      MOVE.L  #$5A,D4
+00001F00  B611                     687      CMP.B   (A1),D3
+00001F02  6E00 FD00                688      BGT UFAIL
+00001F06  B811                     689      CMP.B   (A1),D4
+00001F08  6D00 FCFA                690      BLT UFAIL
+00001F0C  B211                     691  NXTCHI  CMP.B   (A1),D1
+00001F0E  6700 0010                692      BEQ CHKCM
+00001F12  5249                     693      ADDA    #1,A1
+00001F14  B43C 0004                694      CMP.B   #4,D2
+00001F18  6C00 0006                695      BGE CHKCM
+00001F1C  5242                     696      ADDI    #1,D2
+00001F1E  60EC                     697      BRA NXTCHI
+00001F20  45F8 1894                698  CHKCM   LEA COM_TABL,A2
+00001F24  47F8 1050                699      LEA INBUF,A3
+00001F28  4283                     700      CLR.L   D3
+00001F2A  2A13                     701      MOVE.L  (A3),D5 
+00001F2C  0C03 000B                702  NXTCMD  CMPI.B  #NUMCMD,D3
+00001F30  6E00 FCD2                703      BGT UFAIL
+00001F34  2C12                     704      MOVE.L  (A2),D6
+00001F36  BC85                     705      CMP.L   D5,D6
+00001F38  6700 0008                706      BEQ RUNCMD
+00001F3C  5243                     707      ADDI    #1,D3
+00001F3E  5C4A                     708      ADDA    #6,A2
+00001F40  60EA                     709      BRA NXTCMD
+00001F42  48E7 0600                710  RUNCMD  MOVEM.L D5-D6,-(SP) ; ARGUMENT PARSER STARTS HERE
+00001F46  4285                     711      CLR.L   D5
+00001F48  7C20                     712      MOVE.L  #$20,D6
+00001F4A  47F8 10A0                713      LEA EINBF,A3
+00001F4E  B6C9                     714  GETSPC  CMPA    A1,A3
+00001F50  6F00 0012                715      BLE TDONE
+00001F54  BC19                     716      CMP.B   (A1)+,D6
+00001F56  66F6                     717      BNE GETSPC
+00001F58  2E09                     718      MOVE.L  A1,D7
+00001F5A  4EB9 00001F7C            719      JSR SKPUSH
+00001F60  5245                     720      ADD #1,D5
+00001F62  60EA                     721      BRA GETSPC  
+00001F64  3E05                     722  TDONE   MOVE    D5,D7
+00001F66  4EB9 00001F7C            723      JSR SKPUSH
+00001F6C                           724  *   MOVEM.L (SP)+,D5-D6 ;ARGUMENT PARSER ENDS HERE
+00001F6C  49F8 18DC                725      LEA COM_ADD,A4
+00001F70  C6FC 0002                726      MULU    #2,D3       ;GET DISPLACEMENT WITHIN TRANSLATION TABLE I.E 2*D3; D3=#6
+00001F74  D8C3                     727      ADDA    D3,A4
+00001F76  3A54                     728      MOVEA   (A4),A5
+00001F78  4ED5                     729      JMP (A5)    
+00001F7A  4E75                     730      RTS
+00001F7C                           731  *-----------------------------------------------------------
+00001F7C                           732  SKPUSH  
+00001F7C  554E                     733      SUBA    #2,A6
+00001F7E  3C87                     734      MOVE.W  D7,(A6)
+00001F80  4E75                     735      RTS
+00001F82                           736  *-----------------------------------------------------------
+00001F82  3E16                     737  STKPOP  MOVE.W  (A6),D7
+00001F84  544E                     738      ADDA    #2,A6
+00001F86  4E75                     739      RTS
+00001F88                           740  *-----------------------------------------------------------    
+00001F88  48E7 2000                741  RMDLLR  MOVEM.L D2,-(SP)
+00001F8C  4281                     742      CLR.L   D1
+00001F8E  0C12 0024                743      CMPI.B  #DOLLAR,(A2)
+00001F92  6600 FC70                744      BNE UFAIL
+00001F96  0C2A 0020 0004           745      CMP.B   #SP,4(A2)
+00001F9C  6700 0012                746      BEQ ISSPC   
+00001FA0  0C2A 0000 0004           747      CMP.B   #ZERO,4(A2)
+00001FA6  6700 0008                748      BEQ ISSPC
+00001FAA  421A                     749      CLR.B   (A2)+
+00001FAC  6000 0004                750      BRA NOSPC
+00001FB0  4212                     751  ISSPC   CLR.B   (A2)
+00001FB2  7403                     752  NOSPC   MOVE.L  #3,D2
+00001FB4  121A                     753  CONTIN  MOVE.B  (A2)+,D1
+00001FB6  B43C 0000                754      CMP.B   #ZERO,D2
+00001FBA  6F00 0008                755      BLE RMDDN
+00001FBE  5382                     756      SUBI.L  #1,D2
+00001FC0  E199                     757      ROL.L   #8,D1
+00001FC2  60F0                     758      BRA CONTIN
+00001FC4  4CDF 0004                759  RMDDN   MOVEM.L (SP)+,D2
+00001FC8  4E75                     760      RTS
+00001FCA                           761  *-----------------------------------------------------------    
+00001FCA  4EB8 1A2A                762  HELP    JSR CLRBUF
+00001FCE  4EB8 1BE2                763      JSR MHELP
+00001FD2  6000 F036                764      BRA MAIN
+00001FD6                           765  *-----------------------------------------------------------    
+00001FD6  4EB8 1F82                766  MDSP    JSR STKPOP
+00001FDA  327C 1190                767      MOVEA   #DMDSP,A1
+00001FDE  BE7C 0002                768      CMP     #2,D7
+00001FE2  6600 FC34                769      BNE UFAIL2
+00001FE6  4EB8 1F82                770      JSR STKPOP
+00001FEA  3447                     771      MOVEA   D7,A2
+00001FEC  4EB8 1F88                772      JSR RMDLLR
+00001FF0  2401                     773      MOVE.L  D1,D2
+00001FF2  4EB8 1C66                774      JSR ASTBIN
+00001FF6  2846                     775      MOVEA.L D6,A4
+00001FF8  4EB8 1F82                776      JSR STKPOP
+00001FFC  3447                     777      MOVEA   D7,A2
+00001FFE  4EB8 1F88                778      JSR RMDLLR
+00002002  2401                     779      MOVE.L  D1,D2
+00002004  4EB8 1C66                780      JSR ASTBIN
+00002008  2646                     781      MOVEA.L D6,A3
+0000200A  4EB8 1D00                782      JSR MMDSP
+0000200E  4EF9 0000100A            783      JMP MAIN
+00002014                           784  *-----------------------------------------------------------
+00002014  4EB8 1F82                785  MCHG    JSR STKPOP
+00002018  327C 1224                786      MOVEA   #DMCHG,A1
+0000201C  BE7C 0001                787      CMP     #1,D7
+00002020  6600 FBF6                788      BNE UFAIL2
+00002024  4EB8 1F82                789      JSR STKPOP
+00002028  3447                     790      MOVEA   D7,A2
+0000202A  4EB8 1F88                791      JSR RMDLLR
+0000202E  2401                     792      MOVE.L  D1,D2
+00002030  4EB8 1C66                793      JSR ASTBIN
+00002034  2646                     794      MOVEA.L D6,A3
+00002036  4EB8 1DF0                795      JSR MEMMOD
+0000203A  6000 EFCE                796      BRA MAIN
+0000203E                           797  *-----------------------------------------------------------    
+0000203E  4EB8 1F82                798  SRTW    JSR STKPOP
+00002042  327C 12B8                799      MOVEA   #DSRTW,A1
+00002046  BE7C 0002                800      CMP     #2,D7
+0000204A  6600 FBCC                801      BNE UFAIL2
+0000204E  4EB8 1F82                802      JSR STKPOP
+00002052  3447                     803      MOVEA   D7,A2
+00002054  4EB8 1F88                804      JSR RMDLLR
+00002058  2401                     805      MOVE.L  D1,D2
+0000205A  4EB8 1C66                806      JSR ASTBIN
+0000205E  2A46                     807      MOVEA.L D6,A5
+00002060  4EB8 1F82                808      JSR STKPOP
+00002064  3447                     809      MOVEA   D7,A2
+00002066  4EB8 1F88                810      JSR RMDLLR
+0000206A  2401                     811      MOVE.L  D1,D2
+0000206C  4EB8 1C66                812      JSR ASTBIN
+00002070  2646                     813      MOVEA.L D6,A3
+00002072  4EB8 1E58                814      JSR SORTW
+00002076  6000 EF92                815      BRA MAIN
+0000207A                           816  *-----------------------------------------------------------    
+0000207A  4EB8 1F82                817  BKMV    JSR STKPOP
+0000207E  327C 1474                818      MOVEA   #DBKMV,A1
+00002082  BE7C 0003                819      CMP     #3,D7
+00002086  6600 FB90                820      BNE UFAIL2
+0000208A  4EB8 1F82                821      JSR STKPOP
+0000208E  3447                     822      MOVEA   D7,A2
+00002090  4EB8 1F88                823      JSR RMDLLR
+00002094  2401                     824      MOVE.L  D1,D2
+00002096  4EB8 1C66                825      JSR ASTBIN
+0000209A  2846                     826      MOVEA.L D6,A4
+0000209C  4EB8 1F82                827      JSR STKPOP
+000020A0  3447                     828      MOVEA   D7,A2
+000020A2  4EB8 1F88                829      JSR RMDLLR
+000020A6  2401                     830      MOVE.L  D1,D2
+000020A8  4EB8 1C66                831      JSR ASTBIN
+000020AC  2646                     832      MOVEA.L D6,A3
+000020AE  4EB8 1F82                833      JSR STKPOP
+000020B2  3447                     834      MOVEA   D7,A2
+000020B4  4EB8 1F88                835      JSR RMDLLR
+000020B8  2401                     836      MOVE.L  D1,D2
+000020BA  4EB8 1C66                837      JSR ASTBIN
+000020BE  2446                     838      MOVEA.L D6,A2
+000020C0  4EB8 1ED8                839      JSR BLKMOV
+000020C4  6000 EF44                840      BRA MAIN
+000020C8                           841      
+000020C8                           842  *-----------------------------------------------------------    
+000020C8  4EB8 1F82                843  BKFL    JSR STKPOP
+000020CC  327C 134C                844      MOVEA   #DBKFL,A1
+000020D0  BE7C 0003                845      CMP     #3,D7
+000020D4  6600 FB42                846      BNE UFAIL2  ;
+000020D8  4EB8 1F82                847      JSR STKPOP
+000020DC  3447                     848      MOVEA   D7,A2
+000020DE                           849      *--------------
+000020DE  141A                     850      MOVE.B  (A2)+,D2
+000020E0  E15A                     851      ROL.W   #8,D2
+000020E2  1412                     852      MOVE.B  (A2),D2
+000020E4                           853      *--------------
+000020E4  4EB8 1C66                854      JSR ASTBIN
+000020E8  2806                     855      MOVE.L  D6,D4
+000020EA  4EB8 1F82                856      JSR STKPOP
+000020EE  3447                     857      MOVEA   D7,A2
+000020F0  4EB8 1F88                858      JSR RMDLLR
+000020F4  2401                     859      MOVE.L  D1,D2
+000020F6  4EB8 1C66                860      JSR ASTBIN
+000020FA  2A46                     861      MOVEA.L D6,A5
+000020FC  4EB8 1F82                862      JSR STKPOP
+00002100  3447                     863      MOVEA   D7,A2
+00002102  4EB8 1F88                864      JSR RMDLLR
+00002106  2401                     865      MOVE.L  D1,D2
+00002108  4EB8 1C66                866      JSR ASTBIN
+0000210C  2646                     867      MOVEA.L D6,A3
+0000210E  4EB8 1DAA                868      JSR BLKFIL
+00002112  4EF9 0000100A            869      JMP MAIN
+00002118                           870      
+00002118                           871  *-----------------------------------------------------------
+00002118  4EB8 1F82                872  BKSH    JSR STKPOP
+0000211C  327C 13E0                873      MOVEA   #DBKSH,A1
+00002120  BE7C 0003                874      CMP     #3,D7
+00002124  6600 FAF2                875      BNE UFAIL2
+00002128  4EB8 1F82                876      JSR STKPOP
+0000212C  3047                     877      MOVE.W  D7,A0       ;string loc 
+0000212E  4EB8 1F82                878      JSR STKPOP
+00002132  3447                     879      MOVEA   D7,A2
+00002134  4EB8 1F88                880      JSR RMDLLR
+00002138  2401                     881      MOVE.L  D1,D2
+0000213A  4EB8 1C66                882      JSR ASTBIN
+0000213E  3846                     883      MOVE.W  D6,A4       ;address 2
+00002140  4EB8 1F82                884      JSR STKPOP
+00002144  3447                     885      MOVEA   D7,A2
+00002146  4EB8 1F88                886      JSR RMDLLR
+0000214A  2401                     887      MOVE.L  D1,D2
+0000214C  4EB8 1C66                888      JSR ASTBIN
+00002150  3646                     889      MOVE.W  D6,A3       ;address 1
+00002152  4EB8 1E8E                890      JSR BLKSCH
+00002156  4EF9 0000100A            891      JMP MAIN
+0000215C                           892  *-----------------------------------------------------------
+0000215C  4EB8 1F82                893  BKST    JSR STKPOP
+00002160  BE7C 0002                894      CMP     #2,D7
+00002164  6D00 FAB2                895      BLT UFAIL2
+00002168  5547                     896      SUBI    #2,D7
+0000216A  5247                     897      ADD #1,D7
+0000216C  DCC7                     898      ADDA    D7,A6
+0000216E  4EB8 1F82                899      JSR STKPOP
+00002172  3047                     900      MOVEA   D7,A0       ;STRING START ADDRESS
+00002174  4EB8 1F82                901      JSR STKPOP
+00002178  3447                     902      MOVEA   D7,A2
+0000217A  4EB8 1F88                903      JSR RMDLLR
+0000217E  2401                     904      MOVE.L  D1,D2
+00002180  4EB8 1C66                905      JSR ASTBIN
+00002184  3846                     906      MOVE.W  D6,A4   ;BLOCK LOCATION
+00002186  4EF9 0000100A            907      JMP MAIN
+0000218C                           908  *-----------------------------------------------------------
+0000218C  4EB8 1F82                909  HXDC    JSR STKPOP
+00002190  327C 1552                910          MOVEA   #DHXDC,A1
+00002194  BE7C 0001                911          CMP     #1,D7
+00002198  6600 FA7E                912          BNE     UFAIL2
+0000219C  4EB8 1F82                913          JSR STKPOP
+000021A0  3447                     914          MOVEA   D7,A2
+000021A2  4EB8 1F88                915          JSR RMDLLR
+000021A6  2401                     916          MOVE.L  D1,D2
+000021A8  4EB8 1CE0                917          JSR HX2DEC
+000021AC  48E7 0040                918          MOVEM.L A1,-(SP)
+000021B0  4EB8 1A2A                919          JSR CLRBUF
+000021B4  43F8 1050                920          LEA INBUF,A1
+000021B8  2285                     921          MOVE.L  D5,(A1)
+000021BA  4EB8 19E6                922          JSR OTPTCR
+000021BE  4CDF 0200                923          MOVEM.L (SP)+,A1
+000021C2  4EF9 0000100A            924          JMP MAIN
+000021C8                           925          
+000021C8  4EB8 1F82                926  DCHX    JSR STKPOP
+000021CC  327C 159C                927          MOVEA   #DDCHX,A1
+000021D0  BE7C 0001                928          CMP     #1,D7
+000021D4  6600 FA42                929          BNE     UFAIL2
+000021D8  4EB8 1F82                930          JSR STKPOP
+000021DC  3447                     931          MOVEA   D7,A2
+000021DE  4EB8 1F88                932          JSR RMDLLR
+000021E2  2401                     933          MOVE.L  D1,D2
+000021E4  4EB8 1CF0                934          JSR DEC2HX
+000021E8  48E7 0040                935          MOVEM.L A1,-(SP)
+000021EC  4EB8 1A2A                936          JSR CLRBUF
+000021F0  43F8 1050                937          LEA INBUF,A1
+000021F4  2285                     938          MOVE.L  D5,(A1)
+000021F6  4EB8 19E6                939          JSR OTPTCR
+000021FA  4CDF 0200                940          MOVEM.L (SP)+,A1
+000021FE  4EF9 0000100A            941          JMP MAIN
+00002204                           942          
+00002204                           943  *-----------------------------------------------------------
+00002204  4EB8 1A66                944  EXIT    JSR MEXIT
+00002208                           945  *-----------------------------------------------------------
+00002208  4EB8 1F82                946  DREG    JSR STKPOP
+0000220C  BE7C 0000                947          CMP     #0,D7
+00002210  6D00 FA06                948          BLT UFAIL2
+00002214  6000 F880                949          BRA DSREGS
+00002218  6000 EDF0                950          BRA MAIN
+0000221C                           951  *-----------------------------------------------------------
+0000221C  4EB8 1F82                952  GOTO    JSR STKPOP
+00002220  BE7C 0000                953      CMP     #0,D7
+00002224  6D00 F9F2                954      BLT UFAIL2
+00002228  4EB8 1F82                955      JSR STKPOP
+0000222C  3447                     956      MOVEA   D7,A2
+0000222E  4EB8 1F88                957      JSR RMDLLR
+00002232  2401                     958      MOVE.L  D1,D2
+00002234  4EB8 1C66                959      JSR ASTBIN
+00002238  3046                     960      MOVE.W  D6,A0
+0000223A  4ED0                     961      JMP (A0)
+0000223C                           962      
+0000223C                           963  *-----------------------------------------------------------
+0000223C  4EB8 1A08                964  SHWREG  JSR OTPTNC
+00002240  221E                     965      MOVE.L  (A6)+,D1
+00002242  4EB8 1D7A                966      JSR HX2ASC
+00002246  4EB8 1BCA                967      JSR DVALUE
+0000224A  4EB8 1B7A                968      JSR DSPACE
+0000224E  4E75                     969      RTS
+00002250                           970  
+00004000                           971      ORG $4000
+00004000  43F8 178A                972  MYPROG  LEA UPROG,A1
+00004004  4EB8 19E6                973          JSR OTPTCR
+00004008  027C 0700                974          ANDI #$0700, SR
+0000400C  6000 CFFC                975          BRA MAIN
+00004100                           976      ORG $4100
+00004100  43F8 178A                977          LEA UPROG,A1
+00004104  4EB8 19E6                978          JSR OTPTCR
+00004108  3238 FFFF                979          MOVE.W $FFFFFFFF, D1
+0000410C                           980          *BRA BUS_ERR
+0000410C                           981          
+0000410C                           982  
+0000410C                           983  * MAIN PROGRAM
+0000410C                           984  *----------------------------------------------------------
+00001000                           985      ORG $1000       
+00001000  4EB8 19AC                986  START:  JSR IEXVC           ;LOAD EXCEPTION VECTOR TABLES
+00001004  2C7C 00003000            987          MOVE.L  #STACK,A6
+0000100A                           988  *--------------------------
+0000100A  4EB8 1A80                989  MAIN    JSR DPRMPT          ;SUBROUTINE TO PRINT PROMPT
+0000100E  4EB8 1EF8                990          JSR INTPRT          ;SUBROUTINE TO INTERPRET THE USER COMMAND
+00001012                           991  *       JSR MYPROG      
+00001012  60F6                     992          BRA MAIN            ;KEEP LOOPING
+00001014                           993  *--------------------------
+00001014                           994          
+00001014                           995      END START               ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ADEMSG              16C6
+ADRERR              186E
+ADR_ERR             18F4
+AR0                 17F6
+AR1                 1800
+AR2                 180A
+AR3                 1814
+AR4                 181E
+AR5                 1828
+AR6                 1832
+ASCDNE              1CB0
+ASDONE              1CBC
+ASTBIN              1C66
+BCDTBIN             1C4A
+BFDMA               1DBE
+BFEXT               1DE6
+BFNLIN              1DE0
+BINTBCD             1C28
+BKFL                20C8
+BKFLP               1DC6
+BKMV                207A
+BKSH                2118
+BKST                215C
+BLKFIL              1DAA
+BLKMOV              1ED8
+BLKSCH              1E8E
+BLKSET              1EEC
+BSEMSG              16E2
+BUS_ERR             1934
+CHKCM               1F20
+CHKEND              1E7A
+CHKNXT              1E38
+CHKSWP              1E82
+CLRBUF              1A2A
+CLRDE               1D74
+CLRDNE              1A42
+CLRDNE2             1A60
+CLRNXT              1A36
+CLRNXT2             1A54
+CLROBF              1A48
+CMFRT               1C8C
+COM_ADD             18DC
+COM_TABL            1894
+CONTIN              1FB4
+CONTNU              1E40
+CR                  D
+CRNMSET             19F6
+DBKFL               134C
+DBKMV               1474
+DBKSH               13E0
+DCHX                21C8
+DDCHX               159C
+DDREG               1508
+DEC2HX              1CF0
+DECASC              1CC2
+DEXIT               15E6
+DGOTO               1630
+DHELP               1146
+DHXDC               1552
+DIV_ZRO             195C
+DLINEF              1B8C
+DMCHG               1224
+DMDSP               1190
+DNLINE              1BB4
+DNULIN              1D36
+DOLLAR              24
+DONESR              1EC0
+DPRMPT              1A80
+DQNMRK              1BA2
+DR0                 17A6
+DR1                 17B0
+DR2                 17BA
+DR3                 17C4
+DR4                 17CE
+DR5                 17D8
+DR6                 17E2
+DR7                 17EC
+DREG                2208
+DSPACE              1B7A
+DSREGS              1A96
+DSRTW               12B8
+DVALUE              1BCA
+DVZMSG              171A
+EHMNU               16C4
+EINBF               10A0
+EOTBF               10BA
+EXIT                2204
+FAIL2               1CAA
+FIXI                1CB2
+GETNXT              1EAA
+GETSPC              1F4E
+GETSRG              1E9A
+GOTO                221C
+H2ALE9              1D98
+H2ALUP              1D82
+H2ANXT              1D9C
+HELP                1FCA
+HLPMNU              10FC
+HMDNE               1BFE
+HX2ASC              1D7A
+HX2DEC              1CE0
+HXDC                218C
+IEXVC               19AC
+ILAMSG              16FE
+ILL_INS             1948
+INBUF               1050
+INPUT               1A6C
+INTPRT              1EF8
+INTRO1              10C3
+INVCOM              1868
+ISSPC               1FB0
+LF                  A
+LINE_A              1984
+LINE_F              1998
+LNAMSG              1752
+LNFMSG              176E
+LOOP2               1C74
+LPDMA               1D0C
+LPDSP               1D16
+LPMHP               1BEE
+MAIN                100A
+MCHG                2014
+MDEXT               1D3C
+MDSP                1FD6
+MEMMOD              1DF0
+MEXIT               1A66
+MHELP               1BE2
+MMADSP              1D46
+MMDONE              1E52
+MMDSP               1D00
+MVBYT               1EDC
+MVDONE              1EE6
+MYPROG              4000
+NCNMSET             1A18
+NEXTN               1E62
+NLINE               10C2
+NOSPC               1FB2
+NUMCMD              B
+NXT2                1CA0
+NXTCHI              1F0C
+NXTCMD              1F2C
+NXTDIG              1C32
+NXTVAL              1DFC
+OTPTCR              19E6
+OTPTNC              1A08
+OUTBF               10A2
+PCR                 1850
+PROMPT              185A
+PRVMSG              1736
+PRV_VIO             1970
+QUNMRK              10BE
+REPET               1CC8
+RESRT               1E5E
+RMDDN               1FC4
+RMDLLR              1F88
+RUNCMD              1F42
+SCHDNE              1ED2
+SEARCH              1EA6
+SHWREG              223C
+SKPUSH              1F7C
+SORTW               1E58
+SP                  20
+SPACE               10BC
+SRTW                203E
+SSP                 1846
+STACK               3000
+START               1000
+STKPOP              1F82
+TDONE               1F64
+UFAIL               1C04
+UFAIL2              1C18
+UPROG               178A
+US                  183C
+ZERO                0
